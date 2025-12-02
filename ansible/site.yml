@@ -1,0 +1,69 @@
+- hosts: localhost
+  connection: local
+  become: yes
+
+  tasks:
+
+  - name: Install base tools
+    apt:
+      name: [curl, git, unzip, jq]
+      state: present
+      update_cache: yes
+
+  - name: Install Docker
+    shell: |
+      curl -fsSL https://get.docker.com | sh
+
+  - name: Install kubectl
+    shell: |
+      curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+      install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl
+
+  - name: Install Minikube
+    shell: |
+      curl -LO https://storage.googleapis.com/minikube/releases/latest/minikube-linux-amd64
+      install minikube-linux-amd64 /usr/local/bin/minikube
+
+  - name: Start Minikube
+    shell: |
+      minikube start --driver=docker --force --memory=2500mb
+
+  - name: Enable ingress
+    shell: minikube addons enable ingress
+
+  - name: Enable MetalLB
+    shell: minikube addons enable metallb
+
+  - name: Apply MetalLB config
+    copy:
+      dest: /tmp/metallb.yaml
+      content: |
+        apiVersion: v1
+        kind: ConfigMap
+        metadata:
+          namespace: metallb-system
+          name: config
+        data:
+          config: |
+            address-pools:
+            - name: default
+              protocol: layer2
+              addresses:
+              - 192.168.49.240-192.168.49.250
+    register: mlb
+
+  - name: kubectl apply
+    shell: kubectl apply -f /tmp/metallb.yaml
+
+  - name: Install Terraform
+    shell: |
+      apt install -y wget
+      wget https://releases.hashicorp.com/terraform/1.5.0/terraform_1.5.0_linux_amd64.zip
+      unzip terraform_1.5.0_linux_amd64.zip
+      mv terraform /usr/local/bin/
+
+  - name: Apply Terraform
+    shell: |
+      cd ~/notesapp-project/terraform
+      terraform init
+      terraform apply -auto-approve

@@ -1,0 +1,15 @@
+# Terraform local state & plugins
+terraform/.terraform/
+terraform/*.tfstate
+terraform/*.tfstate.backup
+terraform/crash.log
+
+# Ansible local tools
+ansible/minikube-linux-amd64
+ansible/kubectl
+
+# Python / Node / autres
+_pycache_/
+*.pyc
+node_modules/
+.env

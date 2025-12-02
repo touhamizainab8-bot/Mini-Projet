@@ -1,0 +1,3 @@
+FROM postgres:14
+ENV POSTGRES_PASSWORD=notespass
+ENV POSTGRES_DB=notesdb
